@@ -1,0 +1,20 @@
+*HDR
+TRO atm, H2O only, rld, incl continuum ! FASCODE 1
+*FLG
+rad flx zen bfx ctm ! output radiances, calc as fluxes, caculate downward fluxes, plank radiance varies linearly with optical depth, include continuum absorption
+*SPC 
+ 10 1500 1
+*GAS
+H2O 
+*ATM
+../atm/tro.atm.txt
+*LEV
+../lev/z.lev
+*SHP
+ CHI CO2
+ VOI   *
+*SFC 
+299.70
+*HIT
+../hit/h2o_1500cm-1.hit
+*END
