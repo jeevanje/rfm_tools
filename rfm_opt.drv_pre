@@ -1,0 +1,15 @@
+*HDR
+*FLG
+*SPC 
+*GAS
+*ATM
+*LEV
+*SHP
+ CHI CO2
+ VOI   *
+*SFC 
+300.0
+*HIT
+*OPT
+./opt/opt_*.asc
+*END
