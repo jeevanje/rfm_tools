@@ -18,7 +18,7 @@ make_atm = function(file,description,z,p,tabs,h2o,co2){
 	 nlev = length(z)
 
 	 # Write
-	 write_file(description)
+	 write_file(paste("!",description,sep=""))
 	 write_file("! Produced by make_atm in rfm_tools.R")
 	 write_file(nlev)
 	 for (i in 1:nvars){ 
