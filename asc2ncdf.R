@@ -70,7 +70,7 @@ for (var2d in c("coo","opt","flx")){
     for (m in 1:nlev){
        zval      = z[m]    # m
        if (zval < 1e5){
-	  zstring = formatC(zval,format="d",width=5,flag="0")
+	  zstring = formatC(round(zval,digits=0),format="d",width=5,flag="0")
        } else {
 	  zstring = formatC(zval/1000,format="d",width=5,flag="0")
        }
