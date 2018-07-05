@@ -1,0 +1,15 @@
+*HDR
+*FLG
+*SPC 
+*GAS
+*ATM
+*DIM
+*SHP
+ CHI CO2
+ VOI   *
+*SFC 
+300.0
+*HIT
+*TAB
+./tab/tab.asc
+*END
