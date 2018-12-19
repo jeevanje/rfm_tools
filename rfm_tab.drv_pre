@@ -7,9 +7,7 @@
 *SHP
  CHI CO2
  VOI   *
-*SFC 
-300.0
 *HIT
 *TAB
-./tab/tab.asc
+./tab/tab_*.asc
 *END

@@ -1,5 +1,5 @@
 args = commandArgs(trailingOnly=TRUE)
-source("../Rtools/thermo_tools.R")
+source("~/Rtools/thermo_tools.R")
 library(ncdf4)
 
 #=======================#
@@ -23,6 +23,7 @@ read_atm = function(atmpath,skip,nlev){
 #===========#
 
 case       = args[1]
+gas        = args[2]
 rfmdir     = "~/17rad_cooling2/rfm"
 casedir    = paste(rfmdir,case,sep="/")
 drvfile    = paste(casedir,"/rfm.drv",sep="")
@@ -51,15 +52,23 @@ nk	   = length(k)
 
 # tab
 print("Reading tab data")
-tabfile    = paste(casedir,"/tab/tab.asc",sep="")
-#tab_data   = read.table(tabfile,skip=10)
-#sigma      = exp(tab_data[[2]])/1000/N_avo 
-sigma      = array(dim=c(nk,nlev))
-for (i in 1:nk){
-    #print(paste("k=",k[i],sep=""))
-    skip      = 5+3*nlines+2+(i-1)*nlines_tab
-    lnsigma_i = scan(tabfile,skip=skip,nmax=nlev+1,quiet=TRUE)[2:(nlev+1)]
-    sigma[i,] = exp(lnsigma_i)/1000/N_avo   # m^2/molecule
+if ((gas=="both")|(gas=="h2o")){
+   tabfile    = paste(casedir,"/tab/tab_h2o.asc",sep="")
+   sigma_h2o  = array(dim=c(nk,nlev))
+   for (i in 1:nk){
+      skip      = 5+3*nlines+2+(i-1)*nlines_tab
+      lnsigma_i = scan(tabfile,skip=skip,nmax=nlev+1,quiet=TRUE)[2:(nlev+1)]
+      sigma_h2o[i,] = exp(lnsigma_i)/1000/N_avo   # m^2/molecule
+   }
+}
+if ((gas=="both")|(gas=="co2")){
+   tabfile    = paste(casedir,"/tab/tab_co2.asc",sep="")
+   sigma_co2  = array(dim=c(nk,nlev))
+   for (i in 1:nk){
+      skip      = 5+3*nlines+2+(i-1)*nlines_tab
+      lnsigma_i = scan(tabfile,skip=skip,nmax=nlev+1,quiet=TRUE)[2:(nlev+1)]
+      sigma_co2[i,] = exp(lnsigma_i)/1000/N_avo   # m^2/molecule
+   }
 }
 
 # 2d fields
@@ -112,11 +121,20 @@ vars_p[['q_co2']]$data     = q_co2
 
 vars_kp = list()
 
-vars_kp[['sigma']]          = list()
-vars_kp[['sigma']]$longname = "Absorption Coefficient"
-vars_kp[['sigma']]$units    = "m^2/molec."
-vars_kp[['sigma']]$data     = sigma
-    
+if ((gas=="both")|(gas=="h2o")){
+   vars_kp[['sigma_h2o']]          = list()
+   vars_kp[['sigma_h2o']]$longname = "H2O absorp. coeff."
+   vars_kp[['sigma_h2o']]$units    = "m^2/molec."
+   vars_kp[['sigma_h2o']]$data     = sigma_h2o
+}    
+
+if ((gas=="both")|(gas=="co2")){
+   vars_kp[['sigma_co2']]          = list()
+   vars_kp[['sigma_co2']]$longname = "CO2 absorp. coeff."
+   vars_kp[['sigma_co2']]$units    = "m^2/molec."
+   vars_kp[['sigma_co2']]$data     = sigma_co2
+}    
+
 vars_kp[['coo']]           = list()
 vars_kp[['coo']]$longname  = "Radiative Cooling"
 vars_kp[['coo']]$units     = "K/day/cm^-1"
