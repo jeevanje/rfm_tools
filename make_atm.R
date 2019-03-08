@@ -1,3 +1,20 @@
+#=======================#
+# Function read_atm     #
+#                       #
+# Reads .atm RFM input  #
+# and outputs single    #
+# atmospheric field     #
+#=======================#
+
+read_atm = function(atmpath,skip,nlev){
+        var = scan(atmpath,skip=skip,sep=",",nlines=ceiling(nlev/5),
+                        strip.white=TRUE,skipNul=TRUE,quiet=TRUE) 
+        var = var[!is.na(var)]
+        dim(var) <- nlev
+        return(var)
+}
+
+
 #=====================#
 # Function make_atm   #
 #                     #

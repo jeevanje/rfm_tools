@@ -1,22 +1,8 @@
 args = commandArgs(trailingOnly=TRUE)
 source("~/Rtools/thermo_tools.R")
+source("./make_atm.R")
 library(ncdf4)
 
-#=======================#
-# Function read_atm     #
-#                       #
-# Reads .atm RFM input  #
-# and outputs single    #
-# atmospheric field     #
-#=======================#
-
-read_atm = function(atmpath,skip,nlev){
-	var = scan(atmpath,skip=skip,sep=",",nlines=ceiling(nlev/5),
-			strip.white=TRUE,skipNul=TRUE,quiet=TRUE) 
-        var = var[!is.na(var)]
-        dim(var) <- nlev
-        return(var)
-}
 
 #===========#
 # Get data  #   
@@ -24,7 +10,7 @@ read_atm = function(atmpath,skip,nlev){
 
 case       = args[1]
 gas        = args[2]
-rfmdir     = "~/17rad_cooling2/rfm"
+rfmdir     = "~/18co2/rfm"
 casedir    = paste(rfmdir,case,sep="/")
 drvfile    = paste(casedir,"/rfm.drv",sep="")
 atmfile    = scan(drvfile,skip=9,sep="/",nmax=3,what="raw")[3]
@@ -81,7 +67,8 @@ for (var2d in c("coo","opt","flx")){
        if (zval < 1e5){
 	  zstring = formatC(round(zval,digits=0),format="d",width=5,flag="0")
        } else {
-	  zstring = formatC(zval/1000,format="d",width=5,flag="0")
+	  zstring = formatC(round(zval/1000,digits=0),
+			    format="d",width=5,flag="0")
        }
        file   = paste(datadir,"/",var2d,"_",zstring,".asc",sep="")
        field[ ,m] = scan(file,skip=4,quiet=TRUE)
