@@ -1,11 +1,12 @@
 # Args
-case=$1
-gas=$2
-atm=$3
-SFC=$4
-
+gas=$1
+atm=$2
+save_sigma=$3
 ctm=ctm
 exec="rfm"
+case=${gas}_${atm}
+
+# Derived script vars
 atmfile=${atm}.atm
 zlevs=$(sed -n "3p" atm/$atmfile | awk '{print($1)}')
 levfile=z${zlevs}.lev
@@ -18,7 +19,7 @@ tabFLG="tab $ctm"
 ATM="../atm/$atmfile"
 LEV="../lev/$levfile"
 DIM=PLV
-#SFC=$(grep -A 1 "*TEM" atm/${atmfile} | sed -n "2p" | awk '{print($1)}' | rev | cut -c 2- | rev)
+SFC=$(grep -A 1 "*TEM" atm/${atmfile} | sed -n "2p" | awk '{print($1)}' | rev | cut -c 2- | rev)
 
 if [ $gas = h2o ]; then
     SPC="10 1500 1"
@@ -68,4 +69,4 @@ for field in tab opt coo; do
     cd ../
 done
 
-Rscript asc2ncdf.R $case $gas
+Rscript asc2ncdf.R $case $gas $save_sigma
