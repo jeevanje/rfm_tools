@@ -11,11 +11,10 @@ library(ncdf4)
 case       = args[1]
 gas        = args[2]
 save_sigma = args[3]
-rfmdir     = "~/19feedbacks/rfm"
+rfmdir     = getwd()
 casedir    = paste(rfmdir,case,sep="/")
 drvfile    = paste(casedir,"/rfm.drv",sep="")
-atmfile    = scan(drvfile,skip=9,sep="/",nmax=3,what="raw")[3]
-atmpath    = paste(rfmdir,"/atm/",atmfile,sep="")
+atmpath    = scan(drvfile,skip=9,what="raw")[1]
 
 # z,p,tabs,qh2o,qco2
 print("Reading thermodynamic profiles")

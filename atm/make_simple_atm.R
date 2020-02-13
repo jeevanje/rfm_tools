@@ -1,4 +1,4 @@
-#args = as.numeric(commandArgs(trailingOnly=TRUE))
+args = as.numeric(commandArgs(trailingOnly=TRUE))
 
 source("~/Rtools/thermo_tools.R")
 source("~/Rtools/rfm_tools.R")
@@ -13,8 +13,8 @@ gamma_st  = args[4]  # K/km, nonnegative!
 co2_ppmv  = args[5]
 Ttp	  = 200   # K
 
-rfmdir	    = "~/19feedbacks/rfm/"
-atmfile     = paste(rfmdir,"atm/Ts",Ts,"_rh",rh,"_gamma_st",gamma_st,"_q",co2_ppmv,".atm",sep="")
+rfmdir	    = "~/18co2/rfm/"
+atmfile     = paste(rfmdir,"atm/Ts",Ts,"_q",co2_ppmv,"_dz100.atm",sep="")
 description = paste("! Simple atmosphere with co2_ppmv = ",co2_ppmv,sep="")
 
 if (file.exists(atmfile)){
@@ -22,11 +22,11 @@ if (file.exists(atmfile)){
    file.remove(atmfile)
 }
 
-
+z     = seq(0,50e3,by=100)
 ptemp = 1e2*seq(1000,10,by=-10)
 Htemp = 8e3   # crude scale height, km
-z     = -Htemp*log(ptemp/ps)
-z     = round(z,digits=-1)
+#z     = -Htemp*log(ptemp/ps)
+#z     = round(z,digits=-1)
 nz    = length(z)
 
 # tabs, qv
