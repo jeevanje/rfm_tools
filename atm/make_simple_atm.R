@@ -8,16 +8,16 @@ source("../make_atm.R")
 Ts	  = args[1]  # K
 rh        = args[2]
 gamma     = args[3]  # K/km !
-co2_ppmv  = args[4]
+co2_ppmv  = 280
+Ttp	  = 150      # K
 
-rfmdir	    = "~/18co2/rfm/"
-atmfile     = paste(rfmdir,"atm/Ts",Ts,"_rh",rh,"_q",co2_ppmv,".atm",sep="")
+rfmdir	    = "~/17rad_cooling2/rfm/"
+atmfile     = paste(rfmdir,"atm/Ts",Ts,"_rh",rh,"_gamma",gamma,"_Ttp",Ttp,".atm",sep="")
 if (file.exists(atmfile)){
    print(paste("File ",atmfile," exists, removing ...",sep=""))
    file.remove(atmfile)
 }
 
-Ttp   = 200   # K
 ps    = 1e5   # Pa
 gamma = 1e-3*gamma  # K/m 
 
@@ -32,12 +32,11 @@ z = c( 0.0,  0.5,  1.0,  1.5,  2.0,
       23.0, 24.0, 25.0, 27.5, 30.0,
       32.5, 35.0, 37.5, 40.0, 42.5,
       45.0, 47.5, 50.0)*1e3   # m
-z     = make_rfm_grd(c(50,500,2500),5e4,c(1e3,18e3),8)
-z     = seq(0,3.5e4,by=100)  # m
+z     = seq(0,5.0e4,by=100)  # m
 ptemp = 1e2*seq(1000,10,by=-10)
 Htemp = 8e3   # crude scale height, km
-z     = -Htemp*log(ptemp/ps)
-z     = round(z,digits=-1)
+#z     = -Htemp*log(ptemp/ps)
+#z     = round(z,digits=-1)
 tabs  = Ts - gamma*z
 p     = ps*(tabs/Ts)^(g/gamma/Rd)
 qv    = rh*qsat(tabs,p)

@@ -3,7 +3,7 @@ args = commandArgs(trailingOnly=TRUE)
 
 library(ncdf4)
 Rtools_dir  = "~/Rtools/"
-project_dir = "~/18co2/"
+project_dir = "~/17rad_cooling2/"
 source(paste(Rtools_dir,"nc_tools.R",sep=""))
 source(paste(Rtools_dir,"thermo_tools.R",sep=""))
 source(paste(project_dir,"rfm/make_atm.R",sep=""))
@@ -18,20 +18,23 @@ nco2_ppmv = as.numeric(args[4])
 nc        = nc_open(ncpath)
 
 if (model=="dam"){
+   # reverse arrays for GCM indexing!
    varlist = c("p","tabs","qv")
-   period  = 20  # days
-   z	= ncvar_get(nc,"z")
+   period  = 1  # days
+   z	= rev(ncvar_get(nc,"z"))
+   np   = length(z)
    for (var in varlist){
         profile = get_profile(nc,period,var)
-    	assign(var,profile)
+    	assign(var,rev(profile))
    }
-   np    = length(z)
-   n_co2 = rep(nco2_ppmv*1e-6,times=nz)
+   # make const RH=0.75
+   qv = 0.75*qsat(tabs,p)
 } else if (model=="gfdl"){
    p     = ncvar_get(nc,"pressm")
    np    = length(p)
    dz    = ncvar_get(nc,"deltaz")
    z     = numeric(np)
+   # This z calculation is suspect!
    z[np] = dz[np]/2
    for (k in (np-1):1){
        z[k] = z[k+1] + (dz[k]+dz[k+1]/2)
@@ -39,26 +42,23 @@ if (model=="dam"){
    tabs  = ncvar_get(nc,"temp")
    r     = ncvar_get(nc,"rh2o")
    qv    = r/(1+r)   
-   n_co2 = rep(nco2_ppmv*1e-6,times=np)
-   n_h2o = qv/m_h2o*m_air
-   varlist = c("z","p","tabs","qv","n_h2o","n_co2")
-   for (var in varlist){
-        vals  = rev(eval(as.name(var)))
-    	assign(var,vals)
-   }
 }
+n_co2 = rep(nco2_ppmv*1e-6,times=np)
+n_h2o = qv/m_h2o*m_air
 
-
+varlist = c("z","p","tabs","qv","n_h2o","n_co2")
+for (var in varlist){
+  # reverse again! Goofy.
+  vals  = rev(eval(as.name(var)))
+  assign(var,vals)
+} 
 
 #=======#
 # Write #
 #=======#
-file = paste(project_dir,"rfm/atm/",ncname,"_",nco2_ppmv,".atm",sep="")
+file = paste(project_dir,"rfm/atm/",ncname,".atm",sep="")
 description = paste("RFM atm file from ",ncpath,sep="")
 if (file.exists(file)) {
    file.remove(file)
 }
 make_atm(file,description,z,p,tabs,n_h2o,n_co2)
-
-levfile = paste(project_dir,"rfm/lev/z",np,".lev",sep="")
-write(1e-3*z,levfile,sep=" ")

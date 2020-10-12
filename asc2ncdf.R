@@ -10,31 +10,36 @@ library(ncdf4)
 
 case       = args[1]
 gas        = args[2]
-rfmdir     = "~/18co2/rfm"
+rfmdir     = "~/17rad_cooling2/rfm"
 casedir    = paste(rfmdir,case,sep="/")
 drvfile    = paste(casedir,"/rfm.drv",sep="")
-atmfile    = scan(drvfile,skip=9,sep="/",nmax=3,what="raw")[3]
-atmpath    = paste(rfmdir,"/atm/",atmfile,sep="")
+#atmfile    = scan(drvfile,skip=9,sep="/",nmax=3,what="raw")[3]
+#atmpath    = paste(rfmdir,"/atm/",atmfile,sep="")
+atmpath    = scan(drvfile,skip=9,what="raw")[1]
+print(paste("atmpath=",atmpath,sep=""))
 
 # z,p,tabs,qh2o,qco2
 print("Reading thermodynamic profiles")
-nlev       = as.numeric(scan(atmpath,skip=2,nmax=1)[1])
+nlev       = as.numeric(scan(atmpath,skip=2,nmax=1,quiet=TRUE)[1])
 nlines     = ceiling(nlev/5)
 nlines_tab = 1+ceiling((nlev-3)/5)
 z	   = 1e3*read_atm(atmpath,skip=4+0*(1+nlines),nlev=nlev)  # m
 p	   = 1e2*read_atm(atmpath,skip=4+1*(1+nlines),nlev=nlev)  # Pa
 tabs       = 1e0*read_atm(atmpath,skip=4+2*(1+nlines),nlev=nlev)  # K  
 q_h2o      = m_h2o/m_air*1e-6*read_atm(atmpath,skip=4+3*(1+nlines),nlev=nlev) 
-q_co2      = m_co2/m_air*1e-6*read_atm(atmpath,skip=4+4*(1+nlines),nlev=nlev)   
-# q in kg/kg
+q_co2      = m_co2/m_air*1e-6*read_atm(atmpath,skip=4+4*(1+nlines),nlev=nlev) # q in kg/kg   
+print(paste("nlev=",nlev,sep=""))
+
 
 # k
-kdata      = scan(drvfile,skip=5,nmax=3,what="raw")
+print("Reading k data")
+kdata      = scan(drvfile,skip=5,nmax=3,what="raw",quiet=TRUE)
 k1	   = 1e2*as.numeric(kdata[1])  # m^-1
 k_nk       = 1e2*as.numeric(kdata[2])  # m^-1
 dk	   = 1e2*as.numeric(kdata[3])  # m^-1
 k	   = seq(from = k1, to = k_nk,by=dk)
 nk	   = length(k)
+print(paste("dk=",dk,", nk=",nk,sep=""))
 
 # tab
 print("Reading tab data")
@@ -76,6 +81,15 @@ for (var2d in c("coo","opt","flx")){
     assign(var2d,field)
 }
 
+# integrated fields
+for (var2d in c("coo","flx")){
+    field2d = eval(as.name(var2d))
+    field1d = apply(field2d,2,sum)*dk*1e-2
+    assign(paste(var2d,"1d",sep=""),field1d)
+}    
+
+
+
 #===========#
 # make ncdf #   
 #===========#
@@ -105,6 +119,16 @@ vars_p[['q_co2']]          = list()
 vars_p[['q_co2']]$longname = "CO2 specific concentration"
 vars_p[['q_co2']]$units    = "(kg co2)/(kg air)"
 vars_p[['q_co2']]$data     = q_co2
+
+vars_p[['coo1d']]          = list()
+vars_p[['coo1d']]$longname = "1D radiative cooling"
+vars_p[['coo1d']]$units    = "K/day"
+vars_p[['coo1d']]$data     = coo1d
+
+vars_p[['flx1d']]          = list()
+vars_p[['flx1d']]$longname = "1D net upward flux"
+vars_p[['flx1d']]$units    = "W/m^2"
+vars_p[['flx1d']]$data     = flx1d
 
 vars_kp = list()
 
