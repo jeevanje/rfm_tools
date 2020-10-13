@@ -5,34 +5,23 @@ source("~/Rtools/rfm_tools.R")
 source("../make_rfm_grd.R")
 source("../make_atm.R")
 
-Ts	  = args[1]  # K
+# Set these params only!
+Ts        = args[1]  # K
 rh        = args[2]
-gamma     = args[3]  # K/km !
-co2_ppmv  = 280
-Ttp	  = 150      # K
+gamma     = args[3]  # K/km or "m" 
+gamma_st  = args[4]  # K/km, nonnegative!
+co2_ppmv  = args[5]
+Ttp	  = 200   # K
 
 rfmdir	    = "~/17rad_cooling2/rfm/"
 atmfile     = paste(rfmdir,"atm/Ts",Ts,"_rh",rh,"_gamma",gamma,"_Ttp",Ttp,".atm",sep="")
+
 if (file.exists(atmfile)){
    print(paste("File ",atmfile," exists, removing ...",sep=""))
    file.remove(atmfile)
 }
 
-ps    = 1e5   # Pa
-gamma = 1e-3*gamma  # K/m 
-
-z = c( 0.0,  0.5,  1.0,  1.5,  2.0,  
-       2.5,  3.0,  3.5,  4.0,  4.5,
-       5.0,  5.5,  6.0,  6.5,  7.0,  
-       7.5,  8.0,  8.5,  9.0,  9.5,
-      10.0, 10.5, 11.0, 11.5, 12.0, 
-      12.5, 13.0, 13.5, 14.0, 14.5, 
-      15.0, 16.0, 17.0,
-      18.0, 19.0, 20.0, 21.0, 22.0,
-      23.0, 24.0, 25.0, 27.5, 30.0,
-      32.5, 35.0, 37.5, 40.0, 42.5,
-      45.0, 47.5, 50.0)*1e3   # m
-z     = seq(0,5.0e4,by=100)  # m
+z     = seq(0,50e3,by=100)
 ptemp = 1e2*seq(1000,10,by=-10)
 Htemp = 8e3   # crude scale height, km
 #z     = -Htemp*log(ptemp/ps)
@@ -42,18 +31,34 @@ p     = ps*(tabs/Ts)^(g/gamma/Rd)
 qv    = rh*qsat(tabs,p)
 nz    = length(z)
 
+# tabs, qv
+if (gamma != "m"){
+   gamma = 1e-3*gamma  # K/m 
+   tabs  = Ts - gamma*z
+   p     = ps*(tabs/Ts)^(g/gamma/Rd)
+} else if (gamma == "m"){
+   tabs    = numeric(nz)
+   p       = numeric(nz)
+   tabs[1] = Ts
+   p[1]	   = ps
+   for (k in 2:nz){
+      tabs[k] = tabs[k-1] - gamma_m(tabs[k-1],p[k-1])*(diff(z)[k-1])
+      p[k]    = p[k-1]    - g*p[k-1]/Rd/tabs[k-1]*(diff(z)[k-1])
+   }
+}   
+qv = rh*qsat(tabs,p)
+
 # add strat
 k_tp  = max(which(tabs>Ttp))+1
 z_tp  = z[k_tp]
 p_tp  = p[k_tp]
 qv_tp = qv[k_tp]
-tabs[(k_tp):nz] = Ttp
+tabs[(k_tp):nz] = Ttp + 1e-3*gamma_st*(z[k_tp:nz]-z_tp)
 qv[(k_tp):nz]   = qv_tp
 p[(k_tp):nz]    = p_tp*exp(-g/Rd/Ttp*(z[(k_tp):nz]-z_tp))
 n_h20 = qv/m_h2o*m_air
 n_co2 = rep(co2_ppmv*1e-6,times=nz)
 
-description = paste("! Simple atmosphere with co2_ppmv = ",co2_ppmv,sep="")
 make_atm(atmfile,description,z,p,tabs,n_h20,n_co2)
 
 levfile     = paste(rfmdir,"lev/z",nz,".lev",sep="")

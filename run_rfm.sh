@@ -1,61 +1,63 @@
 # Args
-case=$1
-gas=$2
-atm=$3
-SFC=$4
-dk=$5
-save_sigma=$6
-
+gas=$1
+atm=$2
+dk=$3   #cm-1
+save_sigma=F
 ctm=ctm
-exec="rfm_NQAD=1"
+exec="rfm"
+case=${gas}_${atm}_dk${dk}
+
+# Derived script vars
 atmfile=${atm}.atm
-levfile=${atm}.lev
-#zlevs=$(sed -n "3p" atm/$atmfile | awk '{print($1)}')
-if [ ! -f lev/${levfile} ]; then
-    Rscript make_lev.R $atm
-fi
+zlevs=$(sed -n "3p" atm/$atmfile | awk '{print($1)}')
+levfile=z${zlevs}.lev
 
 # Derived config vars
 HDR="$atm atm, $ctm"
 optFLG="flx zen opt vrt $ctm"
 cooFLG="rad flx coo sfc $ctm"
 tabFLG="tab $ctm"
-rfmdir=/home/nadirj/17rad_cooling2/rfm
-scratchdir=/tigress/nadirj/17rad_cooling2_data
-ATM="${rfmdir}/atm/$atmfile"
-LEV="${rfmdir}/lev/$levfile"
+ATM="${PWD}/atm/$atmfile"
+LEV="${PWD}/lev/$levfile"
 DIM=PLV
+SFC=$(grep -A 1 "*TEM" atm/${atmfile} | sed -n "2p" | awk '{print($1)}' | rev | cut -c 2- | rev)
 
 if [ $gas = h2o ]; then
     SPC="10 1500 $dk"
     GAS="H2O"
-    HIT="${rfmdir}/hit/h2o_1500cm-1.hit"
+    HIT="${PWD}/hit/h2o_1500cm-1.hit"
 elif [ $gas = co2 ]; then
     SPC="500 850 $dk"
     GAS=CO2
-    HIT="${rfmdir}/hit/co2_500-850cm-1.hit"
+    HIT="${PWD}/hit/co2_500-850cm-1.hit"
 elif [ $gas = both ]; then
-    SPC="10 1500 $dk"
+    SPC="10 1500 1"
     GAS="H2O CO2"
-    HIT="${rfmdir}/hit/h2o_co2_1500cm-1.hit"
+    HIT="${PWD}/hit/h2o_co2_1500cm-1.hit"
 fi
 HDR="$atm atm, $gas, $ctm"
 
 
 # Directories
-mkdir -p ${scratchdir}/$case
-ln -s ${scratchdir}/$case $case 
+echo "Making directories"
+rfmdir=$PWD
+projectdir=${rfmdir%/rfm}
+project=${projectdir##*/}
+datadir=/tigress/nadirj/${project}_data
+mkdir -p $datadir
+mkdir -p $datadir/${case}
+ln -s ${datadir}/$case $case 
 for outdir in tab opt coo flx; do 
     if [ -d ${case}/$outdir ]; then
 	rm ${case}/${outdir}/*
     elif [ ! -d ${case}/$outdir ]; then
-	mkdir -p ${case}/${outdir}
+	mkdir ${case}/${outdir}
     fi
 done
 
 # configure and run RFM 
 for field in tab opt coo; do 
-    echo "RFM ${field} run"
+#field=tab  # for debugging 
     FLG=${field}FLG
     sed -e "/*HDR/ a\ $HDR"\
 	-e "/*FLG/ a\ ${!FLG}"\
@@ -70,9 +72,9 @@ for field in tab opt coo; do
 
     cd $case
     cp rfm_${field}.drv rfm.drv
-    ${rfmdir}/src/$exec > rfm_${field}.out
+    $rfmdir/src/$exec
     mv rfm.log rfm_${field}.log
-    cd ../
+    cd $rfmdir
 done
 
 Rscript asc2ncdf.R $case $gas $save_sigma
